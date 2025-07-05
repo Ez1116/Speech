@@ -69,6 +69,8 @@
             class="w-full h-full object-cover"
             muted 
             autoplay
+            playsinline
+            webkit-playsinline
             preload="auto">
             <source src="Introduce.mp4" type="video/mp4">
             <p class="text-gray-600 text-center mt-4">您的瀏覽器不支援影片播放。</p>
@@ -373,6 +375,21 @@
             
             const video = document.getElementById('intro-video');
             
+            // Force autoplay for mobile devices
+            const forcePlay = () => {
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log('Autoplay failed:', error);
+                        // If autoplay fails, still proceed after a delay
+                        setTimeout(hideWelcomeScreen, 2000);
+                    });
+                }
+            };
+            
+            // Try to play immediately
+            forcePlay();
+            
             // Video event listeners
             video.addEventListener('ended', function() {
                 setTimeout(hideWelcomeScreen, 500);
@@ -383,6 +400,19 @@
                 // If video fails to load, auto-skip after 2 seconds
                 setTimeout(hideWelcomeScreen, 2000);
             });
+            
+            // Additional safety net for mobile devices
+            video.addEventListener('loadedmetadata', function() {
+                forcePlay();
+            });
+            
+            // If video doesn't start playing within 3 seconds, auto-skip
+            setTimeout(() => {
+                if (video.paused || video.currentTime === 0) {
+                    console.log('Video autoplay timeout, skipping...');
+                    hideWelcomeScreen();
+                }
+            }, 3000);
         }
         
         function hideWelcomeScreen() {
