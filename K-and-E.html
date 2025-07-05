@@ -16,11 +16,67 @@
         .step-number-shadow {
             box-shadow: 4px 4px 0px #1f2937;
         }
+        
+        /* Welcome Animation Styles */
+        #welcome-overlay {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        #welcome-overlay.fade-out {
+            animation: fadeOut 1s ease-in-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+        
+        /* Main content entrance animation */
+        .main-content-enter {
+            animation: slideInUp 0.8s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen font-sans" id="main-body">
+    <!-- Welcome Animation Overlay -->
+    <div id="welcome-overlay" class="fixed inset-0 z-50">
+        <video 
+            id="intro-video" 
+            class="w-full h-full object-cover"
+            muted 
+            autoplay
+            preload="auto">
+            <source src="Introduce.mp4" type="video/mp4">
+            <p class="text-gray-600 text-center mt-4">您的瀏覽器不支援影片播放。</p>
+        </video>
+    </div>
+
     <!-- Main Container -->
-    <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto px-4 py-8" id="main-container" style="display: none;">
         <!-- Navigation -->
         <div class="flex justify-end mb-6">
             <div class="flex gap-4">
@@ -301,6 +357,64 @@
     <!-- JavaScript -->
     <script>
         let currentPage = 'cover';
+        let introSkipped = false;
+        
+        // Welcome animation functions
+        function initWelcomeAnimation() {
+            // Check if user has already seen the intro in this session
+            const hasSeenIntro = sessionStorage.getItem('hasSeenIntro');
+            if (hasSeenIntro === 'true') {
+                // Skip intro immediately
+                document.getElementById('welcome-overlay').style.display = 'none';
+                document.getElementById('main-container').style.display = 'block';
+                initMainSite();
+                return;
+            }
+            
+            const video = document.getElementById('intro-video');
+            
+            // Video event listeners
+            video.addEventListener('ended', function() {
+                setTimeout(hideWelcomeScreen, 500);
+            });
+            
+            video.addEventListener('error', function(e) {
+                console.error('Video error:', e);
+                // If video fails to load, auto-skip after 2 seconds
+                setTimeout(hideWelcomeScreen, 2000);
+            });
+        }
+        
+        function hideWelcomeScreen() {
+            const overlay = document.getElementById('welcome-overlay');
+            const mainContainer = document.getElementById('main-container');
+            
+            // Mark as seen in session storage
+            sessionStorage.setItem('hasSeenIntro', 'true');
+            
+            // Add fade-out animation
+            overlay.classList.add('fade-out');
+            
+            // Show and animate main content
+            if (mainContainer) {
+                mainContainer.style.display = 'block';
+                setTimeout(() => {
+                    mainContainer.classList.add('main-content-enter');
+                }, 50);
+            }
+            
+            // Remove overlay after animation
+            setTimeout(function() {
+                overlay.style.display = 'none';
+                // Initialize the main site
+                initMainSite();
+            }, 1000);
+        }
+        
+        // Initialize welcome animation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initWelcomeAnimation();
+        });
 
         function showPage(page) {
             // 頁面切換時滾動到頂部
@@ -393,10 +507,10 @@
             currentPage = page;
         }
 
-        // 初始化頁面
-        document.addEventListener('DOMContentLoaded', function() {
+        // 初始化頁面 - 這個函數現在由 welcome animation 控制
+        function initMainSite() {
             showPage('cover');
-        });
+        }
     </script>
 </body>
 </html>
